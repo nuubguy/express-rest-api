@@ -1,10 +1,15 @@
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+
 
 const productRoutes = require('./api/routes/products');
 const orderRoutes = require('./api/routes/orders');
 
+mongoose.connect('mongodb://harukanoo:harukanoo2@rest-shop-shard-00-00-jxtdl.mongodb.net:27017,rest-shop-shard-00-01-jxtdl.mongodb.net:27017,rest-shop-shard-00-02-jxtdl.mongodb.net:27017/test?ssl=true&replicaSet=rest-shop-shard-0&authSource=admin&retryWrites=true',{
+    useMongoClient:true
+})
 
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
