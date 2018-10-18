@@ -5,11 +5,25 @@ const Product = require('../models/product');
 
 
 router.get('/',(req,res,next) =>{
-    Product.find().exec().then(doc =>{
-        if(doc.length==0){
-            res.status(200).json({message:"no data found"});        
+    Product.find().select('_id name price').exec().then(docs =>{
+        const response ={
+            count: docs.length,
+            products: docs.map(doc =>{
+                return {
+                    name: doc.name,
+                    price: doc.price,
+                    _id: doc._id,
+                    request:{
+                        type:'GET',
+                        url:'http://localhost:3000/products/'+ doc._id
+                    }
+                }
+            })
+        }
+        if(docs.length==0){
+            res.status(200).json({message:"data not found"});        
         }else{
-            res.status(200).json(doc);
+            res.status(200).json(response);
         }
     }).catch(err=>{
         res.status(500).json({error:err});
@@ -18,11 +32,19 @@ router.get('/',(req,res,next) =>{
 
 router.get('/:productId',(req,res,next) =>{
     const id = req.params.productId;
-    Product.findById(id).exec().then(doc =>{    
-        if(doc==null){
+    Product.findById(id).select('_id name price')
+    .exec()
+    .then(docs =>{    
+        if(docs==null){
             res.status(404).json({message:"product not found"});
         }else{
-            res.status(200).json(doc);
+            res.status(200).json({docs,
+                request:{
+                    type:"GET",
+                    description:"Get all products",
+                    url:'http://localhost:3000/products/'
+            }
+        });
         }
     }).catch(err=>{
         res.status(500).json({error:err});
@@ -38,12 +60,19 @@ router.post('/',(req,res,next)=>{
 
     product.save().then(result=>{
         console.log(result);
+        res.status(200).json({
+            message:'product has been saved',
+            product:{
+                _id: result._id,
+                name: result.name,
+                price: result.price,
+                request:{
+                    type:"GET",
+                    url:'http://localhost:3000/products/'+ result._id
+                }
+            }
+        })
     });
-
-    res.status(200).json({
-        message:'product has been saved',
-        product:product
-    })
 });
 
 router.delete('/:productId',(req,res,next)=>{
@@ -51,9 +80,11 @@ router.delete('/:productId',(req,res,next)=>{
     Product.remove({_id:id})
     .exec()
     .then(result =>{
-        res.status(200).json(result);
+        res.status(200).json({request:{
+            type:"GET",
+            url:'http://localhost:3000/products/'
+        }});
     }).catch(err=>{
-        console.log(err)
         res.status(500).json({error:err});
     });
 });
@@ -65,11 +96,12 @@ router.patch('/:productId',(req,res,next)=>{
         updateOps[ops.propName] = ops.value;
     }
     Product.update({_id:id},{$set: updateOps})
-    .exec().then(result =>{
-        console.log(result);
-        res.status(200).json(result);
+    .exec().then(result =>{        
+        res.status(200).json({request:{
+            type:"GET",
+            url:'http://localhost:3000/products/'+ result._id
+        }});
     }).catch(err=>{
-        console.log(err)
         res.status(500).json({error:err});
     });
 });
