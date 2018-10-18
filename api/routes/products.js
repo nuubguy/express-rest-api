@@ -6,7 +6,11 @@ const Product = require('../models/product');
 
 router.get('/',(req,res,next) =>{
     Product.find().exec().then(doc =>{
-        res.status(200).json(doc);
+        if(doc.length==0){
+            res.status(200).json({message:"no data found"});        
+        }else{
+            res.status(200).json(doc);
+        }
     }).catch(err=>{
         res.status(500).json({error:err});
     });    
@@ -40,6 +44,34 @@ router.post('/',(req,res,next)=>{
         message:'product has been saved',
         product:product
     })
+});
+
+router.delete('/:productId',(req,res,next)=>{
+    const id = req.params.productId;
+    Product.remove({_id:id})
+    .exec()
+    .then(result =>{
+        res.status(200).json(result);
+    }).catch(err=>{
+        console.log(err)
+        res.status(500).json({error:err});
+    });
+});
+
+router.patch('/:productId',(req,res,next)=>{
+    const id= req.params.productId;
+    const updateOps = {};
+    for(const ops of req.body){
+        updateOps[ops.propName] = ops.value;
+    }
+    Product.update({_id:id},{$set: updateOps})
+    .exec().then(result =>{
+        console.log(result);
+        res.status(200).json(result);
+    }).catch(err=>{
+        console.log(err)
+        res.status(500).json({error:err});
+    });
 });
 
 module.exports = router;
